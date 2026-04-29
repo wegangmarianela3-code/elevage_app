@@ -1,3 +1,248 @@
-flask>=2.3.0
-flask-cors>=4.0.0
-gunicorn>=21.0.0
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chez Virginie — Boucherie & Volaillerie</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ════ HEADER ════ -->
+  <header class="site-header">
+    <div class="header-bg"></div>
+    <div class="header-content">
+      <div class="logo-mark">
+        <span class="logo-icon">✦</span>
+      </div>
+      <h1>Chez Virginie</h1>
+      <p class="tagline">Boucherie &amp; Volaillerie · Yaoundé</p>
+      <a href="/dashboard" class="dashboard-link">📊 Analyses</a>
+    </div>
+  </header>
+
+  <!-- ════ TABS ════ -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('commande', this)">
+      <span class="tab-icon">🛒</span> Nouvelle commande
+    </button>
+    <button class="tab-btn" onclick="switchTab('historique', this)">
+      <span class="tab-icon">📋</span> Historique
+      <span class="badge" id="hist-badge">0</span>
+    </button>
+  </nav>
+
+  <!-- ════ PANEL : COMMANDE ════ -->
+  <div class="panel active" id="panel-commande">
+
+    <!-- Client -->
+    <section class="card" id="card-client">
+      <div class="card-header">
+        <span class="card-icon">👤</span>
+        <h2>Informations client</h2>
+      </div>
+      <div class="input-row">
+        <div class="field-wrap">
+          <input class="inp" id="inp-nom" type="text" placeholder=" " oninput="updatePrice()"/>
+          <label class="field-label">Nom complet *</label>
+        </div>
+        <div class="field-wrap">
+          <input class="inp" id="inp-tel" type="tel" placeholder=" " oninput="updatePrice()"/>
+          <label class="field-label">Téléphone *</label>
+        </div>
+      </div>
+      <div class="field-wrap" style="margin-top:14px">
+        <input class="inp" id="inp-adresse" type="text" placeholder=" "/>
+        <label class="field-label">Adresse de livraison (optionnelle)</label>
+      </div>
+    </section>
+
+    <!-- Étape 1 : Animal -->
+    <section class="card">
+      <div class="card-header">
+        <span class="step-badge">1</span>
+        <h2>Choisissez votre animal</h2>
+      </div>
+      <div class="animal-grid">
+        <button class="animal-card" id="opt-poulet" onclick="selectAnimal('poulet')">
+          <div class="animal-glow glow-poulet"></div>
+          <span class="animal-big-emoji">🐔</span>
+          <strong>Poulet</strong>
+          <small>Dès 3 500 FCFA</small>
+        </button>
+        <button class="animal-card" id="opt-porc" onclick="selectAnimal('porc')">
+          <div class="animal-glow glow-porc"></div>
+          <span class="animal-big-emoji">🐷</span>
+          <strong>Porc</strong>
+          <small>Dès 55 000 FCFA</small>
+        </button>
+      </div>
+    </section>
+
+    <!-- Étape 2 : Grosseur & Spécimens -->
+    <section class="card hidden" id="card-size">
+      <div class="card-header">
+        <span class="step-badge">2</span>
+        <h2>Grosseur &amp; Spécimens</h2>
+      </div>
+      <div class="size-list" id="opts-size"></div>
+      <div class="gallery-header">
+        <p>Choisissez votre spécimen :</p>
+        <button class="btn-ghost" onclick="refreshStock()">🔄 Actualiser</button>
+      </div>
+      <div class="stock-grid" id="stock-gallery"></div>
+    </section>
+
+    <!-- Étape 3 : État -->
+    <section class="card hidden" id="card-state">
+      <div class="card-header">
+        <span class="step-badge">3</span>
+        <h2>État de l'animal</h2>
+      </div>
+      <div class="state-grid">
+        <button class="state-card" id="state-vivant" onclick="selectState('vivant')">
+          <span class="state-emoji">🐾</span>
+          <strong>Vivant</strong>
+          <small>Prix de base</small>
+        </button>
+        <button class="state-card" id="state-plume" onclick="selectState('plume')">
+          <span class="state-emoji">✂️</span>
+          <strong>Plumé / Brûlé</strong>
+          <small id="plume-price-hint">+250 FCFA</small>
+        </button>
+      </div>
+    </section>
+
+    <!-- Étape 4 : Services (Porc) -->
+    <section class="card hidden" id="card-services">
+      <div class="card-header">
+        <span class="step-badge">4</span>
+        <h2>Services supplémentaires</h2>
+      </div>
+      <button class="service-row" id="chk-decoupe" onclick="toggleService('decoupe')">
+        <div class="service-info">
+          <span class="service-icon">🔪</span>
+          <div>
+            <strong>Découpe en morceaux</strong>
+            <small>Prêt à cuisiner, en sachets</small>
+          </div>
+        </div>
+        <span class="service-price">+3 000 FCFA</span>
+      </button>
+      <button class="service-row" id="chk-boyaux" onclick="toggleService('boyaux')">
+        <div class="service-info">
+          <span class="service-icon">🧹</span>
+          <div>
+            <strong>Nettoyage des boyaux</strong>
+            <small>Nettoyage complet inclus</small>
+          </div>
+        </div>
+        <span class="service-price">+4 000 FCFA</span>
+      </button>
+    </section>
+
+    <!-- Étape 5 : Quantité & Livraison -->
+    <section class="card hidden" id="card-final">
+      <div class="card-header">
+        <span class="step-badge" id="step-final-num">5</span>
+        <h2>Quantité &amp; Livraison</h2>
+      </div>
+      <div class="qty-section">
+        <span class="qty-label">Quantité</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-num" id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <div class="delivery-grid">
+        <button class="delivery-opt" data-value="0" data-label="Retrait boutique" onclick="selectDelivery(this, 0, 'Retrait boutique')">
+          <span>🏪</span>
+          <strong>Boutique</strong>
+          <span class="dlv-price">Gratuit</span>
+        </button>
+        <button class="delivery-opt" data-value="500" data-label="Proche" onclick="selectDelivery(this, 500, 'Proche')">
+          <span>🛵</span>
+          <strong>Proche</strong>
+          <span class="dlv-price">500 FCFA</span>
+        </button>
+        <button class="delivery-opt" data-value="1000" data-label="Standard" onclick="selectDelivery(this, 1000, 'Standard')">
+          <span>🚗</span>
+          <strong>Standard</strong>
+          <span class="dlv-price">1 000 FCFA</span>
+        </button>
+        <button class="delivery-opt" data-value="1500" data-label="Longue" onclick="selectDelivery(this, 1500, 'Longue')">
+          <span>🚚</span>
+          <strong>Longue dist.</strong>
+          <span class="dlv-price">1 500 FCFA</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Prix total -->
+    <div class="price-strip hidden" id="price-box">
+      <div class="price-label">Total estimé</div>
+      <div class="price-value" id="pr-total">0 FCFA</div>
+    </div>
+
+    <button class="btn-cta" id="btn-order" onclick="openRecap()" disabled>
+      Compléter la sélection
+    </button>
+  </div>
+
+  <!-- ════ PANEL : HISTORIQUE ════ -->
+  <div class="panel" id="panel-historique">
+    <section class="card">
+      <div class="card-header">
+        <span class="card-icon">📋</span>
+        <h2>Historique des commandes</h2>
+      </div>
+      <div id="historique-list">
+        <p class="empty-msg">Aucune commande pour l'instant.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ════ MODAL RÉCAP ════ -->
+<div class="modal-overlay hidden" id="modal-recap">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <h3>Récapitulatif</h3>
+    <div id="recap-content"></div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeRecap()">✏️ Modifier</button>
+      <button class="btn-cta-sm" onclick="confirmOrder()">✅ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL SUCCÈS ════ -->
+<div class="modal-overlay hidden" id="modal-success">
+  <div class="modal-box success-modal">
+    <div class="success-ring">✅</div>
+    <h3>Commande enregistrée !</h3>
+    <p id="success-msg"></p>
+    <button class="btn-cta-sm full-w" onclick="closeSuccess()">🛒 Nouvelle commande</button>
+  </div>
+</div>
+
+<!-- ════ MODAL SPÉCIMEN ════ -->
+<div class="modal-overlay hidden" id="modal-specimen">
+  <div class="modal-box specimen-modal">
+    <div class="modal-handle"></div>
+    <img id="specimen-zoom-img" src="" alt="Spécimen"/>
+    <p id="specimen-zoom-label"></p>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeSpecimenModal()">Fermer</button>
+      <button class="btn-cta-sm" id="specimen-confirm-btn" onclick="confirmSpecimen()">✅ Sélectionner</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>
